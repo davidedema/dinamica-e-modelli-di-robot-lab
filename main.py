@@ -3,7 +3,6 @@ from cobot_controller import CobotController
 def main():
     cobot = CobotController(simulation=False)
 
-    # inserire la penna nel gripper
     cobot.open_gripper()
     input("Insert the marker in the gripper and press Enter to continue...")
     cobot.close_gripper()
