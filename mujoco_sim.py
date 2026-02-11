@@ -15,7 +15,6 @@ class MujocoSim:
         
         self.dt_sim = dt_sim
         self.model.opt.timestep = dt_sim
-        self.sphere_name_to_id = {}
 
     def set_state(self, q, dq):
         """Set joint positions and velocities and update kinematics."""
@@ -53,22 +52,3 @@ class MujocoSim:
         if self.open_viz:
             self.viz.close()
             del self.viz
-    def add_visual_sphere(self, name, center, radius, rgba):
-        """Adds a visual sphere to the scene."""
-        if self.open_viz:
-            scene = self.viz.user_scn
-            if scene.ngeom >= scene.maxgeom:
-                print("ERROR: Max number of geom in scene has been reached!")
-                return
-            self.sphere_name_to_id[name] = scene.ngeom
-            scene.ngeom += 1  # increment ngeom
-            # initialise a new sphere and add it to the scene
-            mujoco.mjv_initGeom(scene.geoms[scene.ngeom-1],
-                                mujoco.mjtGeom.mjGEOM_SPHERE, radius*np.ones(3),
-                                center.astype(np.float32), np.eye(3).flatten(), rgba.astype(np.float32))
-
-    def move_visual_sphere(self, name, pos):
-        if self.open_viz:
-            geom_id = self.sphere_name_to_id[name]
-            scene = self.viz.user_scn
-            scene.geoms[geom_id].pos = pos

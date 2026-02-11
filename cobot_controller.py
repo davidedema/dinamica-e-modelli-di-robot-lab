@@ -1,7 +1,7 @@
 import numpy as np
 from scipy.spatial.transform import Rotation as R
 from pymycobot import MyCobot280
-from utils import compute_fk, compute_control
+from utils import compute_fk, compute_control, bcolors
 import time
 import os
 
@@ -14,72 +14,70 @@ class CobotController():
         self.speed = 10.0                       # joint velocity 
         self.deltaT = 0.05                      # Control loop time step (s)ù
         self.simulation = simulation
+        self.lower_bound = [0.2, -0.15]           # Workspace lower bounds (x, y)
+        self.upper_bound = [0.3, 0.15]            # Workspace upper
         if not self.simulation:
             self.mc = MyCobot280(serial_port)       # Initialize MyCobot connection
+            print(f"{bcolors.BOLD}{bcolors.OKCYAN}[MODE] REAL ROBOT MODE{bcolors.ENDC}")
+            print(f"{bcolors.OKGREEN}[STAT] Connected to MyCobot on {serial_port}{bcolors.ENDC}")
         else:
             from mujoco_sim import MujocoSim
+            print(f"{bcolors.BOLD}{bcolors.OKBLUE}[MODE] SIMULATION MODE{bcolors.ENDC}")
             self.mc = MujocoSim(os.path.join(ROOT, 'description', 'scene.xml'))
         self.homing_procedure()
         self.read_first_pose()
 
     def homing_procedure(self):
         initial_q = [0, 0, 0, 0, 0, 0]                          # Home at zero position
+        print(f"{bcolors.OKBLUE}[INFO] Homing procedure: moving to initial position {initial_q}{bcolors.ENDC}")
         if not self.simulation:
-            self.mc.sync_send_angles(initial_q, int(self.speed))    # 
+            self.mc.sync_send_angles(initial_q, int(self.speed))    #
+            print(f"{bcolors.OKGREEN}[STAT] Homing completed. Robot is at initial position.{bcolors.ENDC}")
         else:
             self.mc.set_state(initial_q, np.zeros(6))  # Set initial state in simulation
-
+            print(f"{bcolors.OKGREEN}[STAT] Homing completed. Simulation is at initial position.{bcolors.ENDC}")
+        time.sleep(1)
     def read_first_pose(self):
         if not self.simulation:
             self.q0 = self.mc.get_radians()
             if self.q0 == -1:
-                print("Failed to read initial joint positions. Check connection.")
+                print(f"{bcolors.FAIL}[ERROR] Failed to read initial joint positions. Check connection.{bcolors.ENDC}")
                 exit(1)
         else:
             self.q0 = self.mc.get_state()[0]  # Get initial joint positions from simulation
         self.q_ref = np.array(self.q0)
-        print("Initial joint state received. Computing trajectory...")
-        self.compute_trajectory()
+        print(f"{bcolors.OKGREEN}[STAT] Joint position received, trajectory can be now computed.{bcolors.ENDC}")
 
-    def compute_trajectory(self):
+    def compute_trajectory(self, pos):
         """
         Reach a fixed position and then draw a circle
         Computes a circular trajectory in the workspace for the end-effector,
         starting from its current pose (computed via forward kinematics).
         """
+        
+        if len(pos) != 2:
+            print(f"{bcolors.FAIL}[ERROR] Position must be a 2D point (x, y).{bcolors.ENDC}")
+            return
 
-        # --- Circular Position Trajectory ---
-        radius = 0.04 
-        n_points = 100
-        angles = np.linspace(0, 2 * np.pi, n_points )
-        circle_numbers=2
-
+        # check if pos is inside the workspace
+        if pos[0] < self.lower_bound[0] or pos[0] > self.upper_bound[0]:
+            print(f"{bcolors.FAIL}[ERROR] Position is outside the x workspace bounds.{bcolors.ENDC}")
+            return
+        if pos[1] < self.lower_bound[1] or pos[1] > self.upper_bound[1]:
+            print(f"{bcolors.FAIL}[ERROR] Position is outside the y workspace bounds.{bcolors.ENDC}")
+            return
+        
         orient_d = np.array([[0,-1,0],
                              [-1,0,0],
                              [0,0,-1]])
         orient_d = R.from_matrix(orient_d).as_rotvec()
 
         pos_0 = compute_fk(self.q_ref)[:3,3]
-
-        print(f"Pos_0 {pos_0}")
-
-        pos_init =  np.array([0.22,0,0.033])
-
-        # pos_traj = np.tile(pos_init,(50,1))
-        pos_traj = np.linspace(pos_0,pos_init,50)
-
-        approaching = np.vstack((pos_traj,np.tile(pos_init,(50,1))))
-
-        # pos_traj = np.hstack(( np.vstack((pos_traj,np.tile(pos_init,(50,1)))), np.tile(orient_d,(pos_traj.shape[0],1))))
-
+        pos_target = np.array([pos[0], pos[1], 0.033])  # Desired end-effector position (x, y, z)
+        pos_traj = np.linspace(pos_0,pos_target,50)
+        approaching = np.vstack((pos_traj,np.tile(pos_target,(50,1))))
         pos_traj = np.hstack((approaching, np.tile(orient_d,(approaching.shape[0],1))))
-
-        circle_center = pos_traj[-1,:3] + np.array([0,radius,0])
-        trajectory_circle = circle_center  + radius*np.vstack((np.sin(angles),-np.cos(angles),np.zeros(n_points))).T
-        trajectory_circle = np.hstack((trajectory_circle,np.tile(orient_d,(trajectory_circle.shape[0],1))))
-
-        # --- Full 6D Trajectory: position + orientation ---
-        self.raw_traj = np.vstack((pos_traj, np.tile(trajectory_circle,(circle_numbers,1))))
+        self.raw_traj = pos_traj
 
         # Downsample and pad the trajectory to smooth it at the start
         self.downsampled_traj = self.raw_traj[::1].tolist()
@@ -93,17 +91,24 @@ class CobotController():
 
         self.total_steps = self.downsampled_traj.shape[0]
 
-        print(f"Trajectory computed with {self.total_steps} steps.")
-        print(f"Trajectory content: \n{self.downsampled_traj[:,:3]} ")
+        print(f"{bcolors.OKBLUE}[INFO] Trajectory computed with {self.total_steps} steps.{bcolors.ENDC}")
+        print(f"{bcolors.OKBLUE}[INFO] Total execution time (approx): {self.total_steps * self.deltaT:.2f} seconds.{bcolors.ENDC}")
+        print(f"{bcolors.OKGREEN}[STAT] Trajectory can be now executed with the controller.{bcolors.ENDC}")
 
-        # np.save('x_trajectory.npy',self.raw_traj)
-        self.controller()
+    def open_gripper(self):
+        self.mc.set_gripper_value(50, 20)
 
-    def controller(self):
+    def close_gripper(self):
+        self.mc.set_gripper_value(10, 20)
+
+    def _controller(self):
         """
         Computes joint commands by inverse kinematics and execute them.
         """
+        if self.downsampled_traj is None:
+            raise RuntimeError("Trajectory not computed.")
         self.old_q_d = np.copy(self.q_ref)  
+        start = time.time()
         for i in range(len(self.downsampled_traj)):
             X = self.downsampled_traj[i]
             pos_d = X[0:3]
@@ -123,12 +128,21 @@ class CobotController():
             self.q_d = compute_control(self.old_q_d,pos_d,ori_d,np.eye(3)*Kp_pos,Kp_ori,self.deltaT)
             if not self.simulation:
                 self.mc.send_radians(self.q_d, int(self.speed))
-                time.sleep(self.deltaT)
+                self.old_q_d = np.copy(self.q_d)
             else:
-                self.mc.step(self.q_d, 10)
-            self.old_q_d = np.copy(self.q_d)
-        
-        self.homing_procedure()
+                self.mc.step(self.q_d, self.deltaT)
+                # self.mc.step(np.zeros(6), 5.0)
 
-        self.mc.close()
+                q_current = self.mc.get_state()[0]
+                self.old_q_d = np.copy(q_current)
+            time.sleep(self.deltaT)
+        print(f"{bcolors.OKGREEN}[STAT] Trajectory execution completed in {time.time() - start:.2f} seconds.{bcolors.ENDC}")
+        time.sleep(1)  
+        self.homing_procedure()
+        if self.simulation:
+            self.mc.close()
         
+    
+    def execute_trajectory(self, n_times):
+        for _ in range(n_times):
+            self._controller()

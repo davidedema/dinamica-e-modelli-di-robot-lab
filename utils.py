@@ -113,3 +113,14 @@ def compute_control(q,pos_d,orient_d,K_gain,k_rot,dt):
     dq =J_geom_.T@np.linalg.pinv(J_geom_@J_geom_.T + np.eye(des_vel.shape[0])*0.00010)@des_vel
 
     return q + dq*dt
+
+class bcolors:
+    HEADER = '\033[95m'
+    OKBLUE = '\033[94m'
+    OKCYAN = '\033[96m'
+    OKGREEN = '\033[92m'
+    WARNING = '\033[93m'
+    FAIL = '\033[91m'
+    ENDC = '\033[0m'
+    BOLD = '\033[1m'
+    UNDERLINE = '\033[4m'
