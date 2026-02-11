@@ -1,13 +1,7 @@
-# Example
-from pymycobot import MyCobot280
-import time
-import numpy as np
-from planner import TrajectoryPlanner
-# from controller import EndEffectorController
-
+from cobot_controller import CobotController
 
 def main():
-    planner = TrajectoryPlanner()
+    cobot = CobotController()
 
 if __name__ == "__main__":
     main()
