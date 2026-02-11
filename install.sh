@@ -2,7 +2,7 @@
 
 set -e  # Exit immediately if a command fails
 
-ENV_NAME="dmdr"
+ENV_NAME="dmr"
 
 echo "Creating virtual environment: $ENV_NAME"
 python3 -m venv $ENV_NAME

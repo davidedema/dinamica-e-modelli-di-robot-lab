@@ -9,7 +9,7 @@ Esperienza di laboratorio per il corso **Dinamica e modelli di robot** tenuto da
     ```
 3) Create la cartella per l'esperienza
     ```
-    mkdir dmdr_2026 && cd dmdr_2026
+    mkdir dmr_2026 && cd dmr_2026
     ```
 3) Clonate il seguente progetto
     ```
