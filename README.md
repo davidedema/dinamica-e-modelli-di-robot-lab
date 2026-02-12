@@ -28,7 +28,11 @@ Per utilizzare il programma:
     ```sh
     cd ~/Desktop/dmr_2026/dinamica-e-modelli-di-robot-lab
     ```
-2) Eseguire lo script `main.py`. Esistono varie opzioni per lo script
+2) Attivate l'ambiente virtuale creato precedentemente
+    ```sh
+    source ../dmr/bin/activate
+    ```
+3) Eseguire lo script `main.py`. Esistono varie opzioni per lo script
     - `--mount-pen` Aggiungere questo flag se si desidera inserire il marker
     - `--remove-pen` Aggiungere questo flag se si desidera rimuovere il marker
     - `--simulation` Aggiungere questo flag se si desidera simulare il robot invece di controllarlo nella realtà
