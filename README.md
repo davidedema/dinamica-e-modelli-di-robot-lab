@@ -13,7 +13,7 @@ Esperienza di laboratorio per il corso **Dinamica e modelli di robot** tenuto da
     ```
 3) Clonate il seguente progetto
     ```
-    git clone https://github.com/davidedema/dinamica-e-modelli-di-robot-lab.git
+    git clone https://github.com/davidedema/dinamica-e-modelli-di-robot-lab.git && cd dinamica-e-modelli-di-robot-lab    
     ```
 4) Eseguite il file `install.sh` per la creazione dell'ambiente di lavoro
     ```

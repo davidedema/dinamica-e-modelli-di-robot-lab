@@ -10,7 +10,7 @@ cd .. && python3 -m venv $ENV_NAME
 echo "Activating virtual environment"
 source $ENV_NAME/bin/activate
 
-cd dmr
+cd dinamica-e-modelli-di-robot-lab
 echo "Upgrading pip"
 pip install --upgrade pip
 
