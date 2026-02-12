@@ -1,5 +1,13 @@
-<mujoco model="firefighter">
-  <compiler angle="radian"/>
+<mujoco model="cobot280m5">
+  <compiler angle="radian" inertiafromgeom="true"/>
+  <option integrator="implicitfast"/>
+
+  <default>
+    <default class="cobot">
+      <joint damping="0.1" frictionloss="0.01"/>
+      <general biastype="affine" gainprm="200" biasprm="0 -200 -20" forcerange="-30 30"/>
+    </default>
+  </default>
 
   <asset>
     <mesh name="joint1" content_type="model/obj" file="joint1.obj"/>
@@ -14,27 +22,27 @@
   <worldbody>
     <geom quat="0.707105 0 0 -0.707108" type="mesh" mesh="joint1"/>
     <body name="joint2" pos="0 0 0.13156">
-      <inertial pos="0 0 0" mass="0.1" diaginertia="0.03 0.03 0.03"/>
+      <inertial pos="0 0 0" mass="0.1"/>
       <joint name="joint2_to_joint1" pos="0 0 0" axis="0 0 1" range="-2.9321 2.9321" actuatorfrcrange="-1000 1000"/>
       <geom pos="0 0 -0.06096" quat="0.707105 0 0 -0.707108" type="mesh" mesh="joint2"/>
       <body name="joint3" quat="0.499998 0.500002 0.5 -0.5">
-        <inertial pos="0 0 0" mass="0.1" diaginertia="0.03 0.03 0.03"/>
+        <inertial pos="0 0 0" mass="0.1"/>
         <joint name="joint3_to_joint2" pos="0 0 0" axis="0 0 1" range="-2.4434 2.4434" actuatorfrcrange="-1000 1000"/>
         <geom pos="0 0 0.03256" quat="0.707105 0 -0.707108 0" type="mesh" mesh="joint3"/>
         <body name="joint4" pos="-0.1104 0 0">
-          <inertial pos="0 0 0" mass="0.1" diaginertia="0.03 0.03 0.03"/>
+          <inertial pos="0 0 0" mass="0.1"/>
           <joint name="joint4_to_joint3" pos="0 0 0" axis="0 0 1" range="-2.6179 2.6179" actuatorfrcrange="-1000 1000"/>
           <geom pos="0 0 0.03056" quat="0.707105 0 -0.707108 0" type="mesh" mesh="joint4"/>
           <body name="joint5" pos="-0.096 0 0.06462" quat="0.707105 0 0 -0.707108">
-            <inertial pos="0 0 0" mass="0.1" diaginertia="0.03 0.03 0.03"/>
+            <inertial pos="0 0 0" mass="0.1"/>
             <joint name="joint5_to_joint4" pos="0 0 0" axis="0 0 1" range="-2.6179 2.6179" actuatorfrcrange="-1000 1000"/>
             <geom pos="0 0 -0.03356" quat="0.707105 -0.707108 0 0" type="mesh" mesh="joint5"/>
             <body name="joint6" pos="0 -0.07318 0" quat="0.499998 0.5 -0.5 0.500002">
-              <inertial pos="0 0 0" mass="0.1" diaginertia="0.03 0.03 0.03"/>
+              <inertial pos="0 0 0" mass="0.1"/>
               <joint name="joint6_to_joint5" pos="0 0 0" axis="0 0 1" range="-2.7052 2.7925" actuatorfrcrange="-1000 1000"/>
               <geom pos="0 0 -0.038" quat="1 0 0 0" type="mesh" mesh="joint6"/>
               <body name="joint6_flange" pos="0 0.0456 0" quat="0.707105 -0.707108 0 0">
-                <inertial pos="0 0 0" mass="0.1" diaginertia="0.03 0.03 0.03"/>
+                <inertial pos="0 0 0" mass="0.1"/>
                 <joint name="joint6output_to_joint6" pos="0 0 0" axis="0 0 1" range="-3.14 3.14159" actuatorfrcrange="-1000 1000"/>
                 <geom pos="0 0 -0.012" quat="1 0 0 0" type="mesh" mesh="joint7"/>
               </body>
@@ -46,12 +54,12 @@
   </worldbody>
 
 <actuator>
-  <position joint="joint2_to_joint1" ctrlrange="-2.9321 2.9321" kp="60"/>
-  <position joint="joint3_to_joint2" ctrlrange="-2.4434 2.4434" kp="60"/>
-  <position joint="joint4_to_joint3" ctrlrange="-2.6179 2.6179" kp="60"/>
-  <position joint="joint5_to_joint4" ctrlrange="-2.6179 2.6179" kp="60"/>
-  <position joint="joint6_to_joint5" ctrlrange="-2.7052 2.7925" kp="60"/>
-  <position joint="joint6output_to_joint6" ctrlrange="-3.14 3.14159" kp="60"/>
+  <general name="motor1" class="cobot" joint="joint2_to_joint1"/>
+  <general name="motor2" class="cobot" joint="joint3_to_joint2"/>
+  <general name="motor3" class="cobot" joint="joint4_to_joint3"/>
+  <general name="motor4" class="cobot" joint="joint5_to_joint4"/>
+  <general name="motor5" class="cobot" joint="joint6_to_joint5"/>
+  <general name="motor6" class="cobot" joint="joint6output_to_joint6"/>
 </actuator>
 
 </mujoco>

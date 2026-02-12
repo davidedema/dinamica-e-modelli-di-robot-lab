@@ -34,6 +34,7 @@ class CobotController():
         print(f"{bcolors.OKBLUE}[INFO] Homing procedure: moving to initial position {initial_q}{bcolors.ENDC}")
         if not self.simulation:
             self.mc.sync_send_angles(initial_q, int(self.speed))    #
+            self.mc.sync_send_angles(initial_q, int(self.speed))    #
             print(f"{bcolors.OKGREEN}[STAT] Homing completed. Robot is at initial position.{bcolors.ENDC}")
         else:
             # interpolate a trajectory from current joint positions to initial_q for smooth homing  
@@ -50,7 +51,7 @@ class CobotController():
             self.q0 = self.mc.get_radians()
             if self.q0 == -1:
                 print(f"{bcolors.FAIL}[ERROR] Failed to read initial joint positions. Check connection.{bcolors.ENDC}")
-                exit(1)
+                raise RuntimeError("Failed to read initial joint positions from the robot.")
         else:
             self.q0 = self.mc.get_state()[0]  # Get initial joint positions from simulation
         self.q_ref = np.array(self.q0)
@@ -65,15 +66,15 @@ class CobotController():
         
         if len(pos) != 2:
             print(f"{bcolors.FAIL}[ERROR] Position must be a 2D point (x, y).{bcolors.ENDC}")
-            return
+            raise ValueError("Position must be a 2D point (x, y).")
 
         # check if pos is inside the workspace
         if pos[0] < self.lower_bound[0] or pos[0] > self.upper_bound[0]:
             print(f"{bcolors.FAIL}[ERROR] Position is outside the x workspace bounds.{bcolors.ENDC}")
-            return
+            raise ValueError("Position is outside the x workspace bounds.")
         if pos[1] < self.lower_bound[1] or pos[1] > self.upper_bound[1]:
             print(f"{bcolors.FAIL}[ERROR] Position is outside the y workspace bounds.{bcolors.ENDC}")
-            return
+            raise ValueError("Position is outside the y workspace bounds.")
         
         orient_d = np.array([[0,-1,0],
                              [-1,0,0],
@@ -109,6 +110,7 @@ class CobotController():
             self.mc.set_gripper_value(50, 20)
         else:
             print(f"{bcolors.WARNING}[WARN] Gripper not supported in simulation mode.{bcolors.ENDC}")
+        
     def close_gripper(self):
         if not self.simulation:
             self.mc.set_gripper_value(10, 20)
@@ -157,5 +159,22 @@ class CobotController():
     def execute_trajectory(self, n_times):
         for _ in range(n_times):
             self._controller()
-        if self.simulation:
-            self.mc.close()
+
+    def mount_pen(self):
+        if not self.simulation:
+            print(f"{bcolors.OKBLUE}[INFO] Mounting pen: opening gripper and waiting for user input...{bcolors.ENDC}")
+            self.open_gripper()
+            input("Insert the marker in the gripper and press Enter to continue...")
+            self.close_gripper()
+            print(f"{bcolors.OKGREEN}[STAT] Pen mounted successfully.{bcolors.ENDC}")
+        else:
+            print(f"{bcolors.WARNING}[WARN] Pen mounting not supported in simulation mode.{bcolors.ENDC}")
+    
+    def remove_pen(self):
+        if not self.simulation:
+            print(f"{bcolors.OKBLUE}[INFO] Removing pen: opening gripper and waiting for user input...{bcolors.ENDC}")
+            input("Press enter and take the marker out of the gripper to finish...")
+            self.open_gripper()
+            print(f"{bcolors.OKGREEN}[STAT] Pen removed successfully.{bcolors.ENDC}")
+        else:
+            print(f"{bcolors.WARNING}[WARN] Pen removal not supported in simulation mode.{bcolors.ENDC}")

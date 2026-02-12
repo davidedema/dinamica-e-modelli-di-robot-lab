@@ -75,7 +75,6 @@ class MujocoSim:
     def toggle_pause(self):
         self.paused = not self.paused
 
-
     def close(self):
         if self.open_viz:
             self.viz.close()
