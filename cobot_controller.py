@@ -12,7 +12,7 @@ class CobotController():
         # Flags and buffers
         self.q_ref = None                       # initial joint positions
         self.speed = 10.0                       # joint velocity 
-        self.deltaT = 0.05                      # Control loop time step (s)ù
+        self.deltaT = 0.05                      # Control loop time step (s)
         self.simulation = simulation
         self.lower_bound = [0.2, -0.15]           # Workspace lower bounds (x, y)
         self.upper_bound = [0.3, 0.15]            # Workspace upper
@@ -24,6 +24,8 @@ class CobotController():
             from mujoco_sim import MujocoSim
             print(f"{bcolors.BOLD}{bcolors.OKBLUE}[MODE] SIMULATION MODE{bcolors.ENDC}")
             self.mc = MujocoSim(os.path.join(ROOT, 'description', 'scene.xml'))
+            self.mc.set_frame_vis("body")
+
         self.homing_procedure()
         self.read_first_pose()
 
@@ -34,9 +36,15 @@ class CobotController():
             self.mc.sync_send_angles(initial_q, int(self.speed))    #
             print(f"{bcolors.OKGREEN}[STAT] Homing completed. Robot is at initial position.{bcolors.ENDC}")
         else:
-            self.mc.set_state(initial_q, np.zeros(6))  # Set initial state in simulation
+            # interpolate a trajectory from current joint positions to initial_q for smooth homing  
+            current_q = self.mc.get_state()[0]
+            homing_traj = np.linspace(current_q, initial_q, 50)
+            for q in homing_traj:
+                self.mc.step(q, self.deltaT)
+                time.sleep(self.deltaT)
             print(f"{bcolors.OKGREEN}[STAT] Homing completed. Simulation is at initial position.{bcolors.ENDC}")
         time.sleep(1)
+
     def read_first_pose(self):
         if not self.simulation:
             self.q0 = self.mc.get_radians()
@@ -73,6 +81,7 @@ class CobotController():
         orient_d = R.from_matrix(orient_d).as_rotvec()
 
         pos_0 = compute_fk(self.q_ref)[:3,3]
+        print(f"{bcolors.OKBLUE}[INFO] Current end-effector position: {pos_0}{bcolors.ENDC}")
         pos_target = np.array([pos[0], pos[1], 0.033])  # Desired end-effector position (x, y, z)
         pos_traj = np.linspace(pos_0,pos_target,50)
         approaching = np.vstack((pos_traj,np.tile(pos_target,(50,1))))
@@ -96,10 +105,15 @@ class CobotController():
         print(f"{bcolors.OKGREEN}[STAT] Trajectory can be now executed with the controller.{bcolors.ENDC}")
 
     def open_gripper(self):
-        self.mc.set_gripper_value(50, 20)
-
+        if not self.simulation:
+            self.mc.set_gripper_value(50, 20)
+        else:
+            print(f"{bcolors.WARNING}[WARN] Gripper not supported in simulation mode.{bcolors.ENDC}")
     def close_gripper(self):
-        self.mc.set_gripper_value(10, 20)
+        if not self.simulation:
+            self.mc.set_gripper_value(10, 20)
+        else:
+            print(f"{bcolors.WARNING}[WARN] Gripper not supported in simulation mode.{bcolors.ENDC}")
 
     def _controller(self):
         """
@@ -131,18 +145,17 @@ class CobotController():
                 self.old_q_d = np.copy(self.q_d)
             else:
                 self.mc.step(self.q_d, self.deltaT)
-                # self.mc.step(np.zeros(6), 5.0)
-
                 q_current = self.mc.get_state()[0]
                 self.old_q_d = np.copy(q_current)
             time.sleep(self.deltaT)
+
         print(f"{bcolors.OKGREEN}[STAT] Trajectory execution completed in {time.time() - start:.2f} seconds.{bcolors.ENDC}")
+        print(f"{bcolors.OKGREEN}[STAT] Final EE position: {compute_fk(self.q_d)[:3,3]}{bcolors.ENDC}")
         time.sleep(1)  
         self.homing_procedure()
-        if self.simulation:
-            self.mc.close()
         
-    
     def execute_trajectory(self, n_times):
         for _ in range(n_times):
             self._controller()
+        if self.simulation:
+            self.mc.close()

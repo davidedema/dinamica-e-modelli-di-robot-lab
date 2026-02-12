@@ -46,13 +46,12 @@
   </worldbody>
 
 <actuator>
-<position joint="joint2_to_joint1" ctrlrange="-2.9321 2.9321" kp="50"/>
-<position joint="joint3_to_joint2" ctrlrange="-2.4434 2.4434" kp="50"/>
-<position joint="joint4_to_joint3" ctrlrange="-2.6179 2.6179" kp="50"/>
-<position joint="joint5_to_joint4" ctrlrange="-2.6179 2.6179" kp="50"/>
-<position joint="joint6_to_joint5" ctrlrange="-2.7052 2.7925" kp="50"/>
-<position joint="joint6output_to_joint6" ctrlrange="-3.14 3.14159" kp="50"/>
-
+  <position joint="joint2_to_joint1" ctrlrange="-2.9321 2.9321" kp="60"/>
+  <position joint="joint3_to_joint2" ctrlrange="-2.4434 2.4434" kp="60"/>
+  <position joint="joint4_to_joint3" ctrlrange="-2.6179 2.6179" kp="60"/>
+  <position joint="joint5_to_joint4" ctrlrange="-2.6179 2.6179" kp="60"/>
+  <position joint="joint6_to_joint5" ctrlrange="-2.7052 2.7925" kp="60"/>
+  <position joint="joint6output_to_joint6" ctrlrange="-3.14 3.14159" kp="60"/>
 </actuator>
 
 </mujoco>
